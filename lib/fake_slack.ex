@@ -1,0 +1,2 @@
+defmodule FakeSlack do
+end

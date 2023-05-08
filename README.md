@@ -10,12 +10,13 @@ To connect to the server with telnet run:
 
 ## Commands
 
-- `/delay SECONDS MESSAGE` send a message after a delay
-- `/here` show who is in the current room
-- `/peek ROOM` see who is in another room
-- `/switch ROOM` switch to another room
+- `/delay SECONDS MESSAGE` sends a message after a delay
+- `/time` shows the current server time
+- `/here` shows who is in the current room
+- `/peek ROOM` shows who is in another room
+- `/switch ROOM` moves user to another room
 - `/room` shows the current room
 - `/rooms` shows all rooms
-- `/kick USER` kick a user from the room if you are an admin
-- `/exit` leave the current room and return to the default room
-- `/q` quit the server
+- `/kick USER` kicks a user from the room if you are an admin
+- `/exit` leaves the current room and return to the default room
+- `/q` quits the server

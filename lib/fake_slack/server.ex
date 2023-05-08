@@ -81,7 +81,7 @@ defmodule FakeSlack.Server do
     case :gen_tcp.recv(socket, 0, state.timeout) do
       {:ok, username} ->
         username = String.trim(username)
-        usernames = Users.get_usernames(state.users)
+        usernames = Users.get_users(state.users)
 
         if Enum.member?(usernames, username) do
           :gen_tcp.send(socket, "Username #{username} already taken.\n")

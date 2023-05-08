@@ -13,6 +13,15 @@ defmodule FakeSlack.Server.Commands do
       "/q" ->
         {:ok, :exit}
 
+      "/time" ->
+        {{year, month, day}, {hour, minute, second}} = :calendar.local_time()
+
+        time_message =
+          "The local server time is #{hour}:#{minute}:#{second} on #{day}/#{month}/#{year}.\n"
+
+        Users.send_message(state.users, user, time_message)
+        {:ok, :continue}
+
       "/kick " <> kicked_user ->
         if Rooms.is_admin?(state.admins, room, user) do
           Rooms.kick_user(state.users, user, kicked_user, room)
@@ -78,7 +87,7 @@ defmodule FakeSlack.Server.Commands do
 
       "/users" ->
         users_list =
-          Users.get_usernames(state.users)
+          Users.get_users(state.users)
           |> Enum.filter(fn username -> username != user end)
           |> Enum.sort()
 

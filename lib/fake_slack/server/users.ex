@@ -6,7 +6,7 @@ defmodule FakeSlack.Server.Users do
     :ets.new(:users, [:public])
   end
 
-  def get_usernames(users) do
+  def get_users(users) do
     users
     |> :ets.match({:_, :"$1", :_})
     |> Enum.map(fn [user] -> user end)

@@ -116,7 +116,7 @@ defmodule FakeSlack.Server do
         if Commands.is_command?(message) do
           room = Rooms.get_room(state.users, user)
 
-          case Commands.run_command(state.users, state.admins, message, user, room) do
+          case Commands.run_command(state, socket, message, user, room) do
             {:ok, :continue} ->
               handle_chat(state, socket, user)
 

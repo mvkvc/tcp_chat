@@ -122,9 +122,6 @@ defmodule FakeSlack.Server do
 
             {:ok, :exit} ->
               Users.exit_server(state.users, socket, user)
-
-            _ ->
-              nil
           end
         else
           Users.chat(state.users, socket, message, user)

@@ -16,14 +16,15 @@ defmodule FakeSlack.Server.Users do
     |> Enum.map(fn [user] -> user end)
   end
 
-  def send_message(users, user, message) do
-    case :ets.match(users, {:"$1", user, :_}) do
-      [[socket]] ->
-        message = String.trim(message) <> "\n"
-        :gen_tcp.send(socket, message)
+  def send_message(users, user, message, socket \\ nil) do
+    message = String.trim(message) <> "\n"
 
-      _ ->
+    case socket || find_socket(users, user) do
+      nil ->
         Logger.error("No match for #{user}.")
+
+      socket ->
+        :gen_tcp.send(socket, message)
     end
   end
 
@@ -51,5 +52,12 @@ defmodule FakeSlack.Server.Users do
   def disconnect_user(users, socket, user) do
     :ok = :gen_tcp.close(socket)
     :ets.match_delete(users, {:_, user, :_})
+  end
+
+  defp find_socket(users, user) do
+    case :ets.match(users, {:"$1", user, :_}) do
+      [[socket]] -> socket
+      _ -> nil
+    end
   end
 end

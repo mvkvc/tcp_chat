@@ -19,22 +19,22 @@ defmodule FakeSlack.Server.Commands do
 
   defp handle_command(_state, _socket, "/q", _user, _room), do: {:ok, :exit}
 
-  defp handle_command(state, _socket, "/time", user, _room) do
+  defp handle_command(state, socket, "/time", user, _room) do
     {{year, month, day}, {hour, minute, second}} = :calendar.local_time()
 
     time_message =
       "The local server time is #{hour}:#{minute}:#{second} on #{day}/#{month}/#{year}.\n"
 
-    Users.send_message(state.users, user, time_message)
+    Users.send_message(state.users, user, time_message, socket)
 
     {:ok, :continue}
   end
 
-  defp handle_command(state, _socket, "/kick " <> kicked_user, user, room) do
+  defp handle_command(state, socket, "/kick " <> kicked_user, user, room) do
     if Rooms.is_admin?(state.admins, room, user) do
       Rooms.kick_user(state.users, user, kicked_user, room)
     else
-      Users.send_message(state.users, user, "You are not an admin in `#{room}`.\n")
+      Users.send_message(state.users, user, "You are not an admin in `#{room}`.\n", socket)
     end
 
     {:ok, :continue}
@@ -46,7 +46,7 @@ defmodule FakeSlack.Server.Commands do
     {:ok, :continue}
   end
 
-  defp handle_command(state, _socket, "/here", user, room) do
+  defp handle_command(state, socket, "/here", user, room) do
     user_list =
       Rooms.list_users(state.users, room)
       |> Enum.filter(fn room_user -> room_user != user end)
@@ -54,17 +54,17 @@ defmodule FakeSlack.Server.Commands do
 
     if user_list == [] do
       message = "No other users in `#{room}`.\n"
-      Users.send_message(state.users, user, message)
+      Users.send_message(state.users, user, message, socket)
     else
       user_list_string = Enum.join(user_list, "\n")
       message = "Users in `#{room}`:\n#{user_list_string}\n"
-      Users.send_message(state.users, user, message)
+      Users.send_message(state.users, user, message, socket)
     end
 
     {:ok, :continue}
   end
 
-  defp handle_command(state, _socket, "/peek " <> peeked_room, user, _room) do
+  defp handle_command(state, socket, "/peek " <> peeked_room, user, _room) do
     user_list = Rooms.list_users(state.users, peeked_room)
 
     message =
@@ -79,22 +79,22 @@ defmodule FakeSlack.Server.Commands do
         "Users in `#{peeked_room}`:\n#{user_list_string}\n"
       end
 
-    Users.send_message(state.users, user, message)
+    Users.send_message(state.users, user, message, socket)
 
     {:ok, :continue}
   end
 
-  defp handle_command(state, _socket, "/room", user, room) do
-    Users.send_message(state.users, user, "You are in `#{room}`.\n")
+  defp handle_command(state, socket, "/room", user, room) do
+    Users.send_message(state.users, user, "You are in `#{room}`.\n", socket)
 
     {:ok, :continue}
   end
 
-  defp handle_command(state, _socket, "/rooms", user, _room) do
+  defp handle_command(state, socket, "/rooms", user, _room) do
     rooms = Rooms.list_rooms(state.users) |> Enum.sort()
     rooms_string = Enum.join(rooms, "\n")
     message = "Rooms:\n#{rooms_string}\n"
-    Users.send_message(state.users, user, message)
+    Users.send_message(state.users, user, message, socket)
 
     {:ok, :continue}
   end
@@ -104,7 +104,7 @@ defmodule FakeSlack.Server.Commands do
     {:ok, :continue}
   end
 
-  defp handle_command(state, _socket, "/users", user, _room) do
+  defp handle_command(state, socket, "/users", user, _room) do
     users_list =
       Users.get_users(state.users)
       |> Enum.filter(fn username -> username != user end)
@@ -118,7 +118,7 @@ defmodule FakeSlack.Server.Commands do
         "Users online:\n#{users_list_string}\n"
       end
 
-    Users.send_message(state.users, user, message)
+    Users.send_message(state.users, user, message, socket)
 
     {:ok, :continue}
   end
@@ -132,14 +132,14 @@ defmodule FakeSlack.Server.Commands do
         send_delayed_message(state, socket, message, user, delay_int)
 
       _ ->
-        handle_invalid_delay(state, user, delay_string, message)
+        handle_invalid_delay(state, user, delay_string, message, socket)
     end
 
     {:ok, :continue}
   end
 
-  defp handle_command(state, _socket, message, user, _room) do
-    Users.send_message(state.users, user, "Invalid command #{message}.\n")
+  defp handle_command(state, socket, message, user, _room) do
+    Users.send_message(state.users, user, "Invalid command #{message}.\n", socket)
     {:ok, :continue}
   end
 
@@ -153,7 +153,7 @@ defmodule FakeSlack.Server.Commands do
     end)
   end
 
-  defp handle_invalid_delay(state, user, delay_string, message) do
+  defp handle_invalid_delay(state, user, delay_string, message, socket) do
     error_message =
       if message == "" do
         "Invalid argument #{delay_string}."
@@ -161,6 +161,6 @@ defmodule FakeSlack.Server.Commands do
         "Invalid delay #{delay_string}."
       end
 
-    Users.send_message(state.users, user, error_message)
+    Users.send_message(state.users, user, error_message, socket)
   end
 end

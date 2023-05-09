@@ -1,4 +1,8 @@
 defmodule FakeSlack.Application do
+  @moduledoc """
+  The FakeSlack.Application module is the entry point for the application.
+  """
+
   use Application
 
   @impl true

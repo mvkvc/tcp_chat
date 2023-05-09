@@ -149,9 +149,6 @@ defmodule FakeSlack.Server do
 
       {:ok, :exit} ->
         Users.exit_server(state.users, socket, user)
-
-      {:error, reason} ->
-        Logger.info("Error in handle_command: #{inspect(reason)}")
     end
   end
 end

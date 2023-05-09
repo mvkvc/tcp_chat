@@ -1,5 +1,7 @@
 # fake_slack
 
+[![ci](https://github.com/mvkvc/fake_slack/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/mvkvc/fake_slack/actions/workflows/ci.yaml)
+
 TCP chat server with rooms and server commands.
 
 ## Usage

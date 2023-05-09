@@ -1,5 +1,6 @@
 defmodule FakeSlack.Repo.Admin do
   use Ecto.Schema
+  import Ecto.Changeset
 
   schema "admin" do
     field(:room, :string)

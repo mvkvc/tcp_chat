@@ -1,5 +1,6 @@
 defmodule FakeSlack.Repo.Bans do
   use Ecto.Schema
+  import Ecto.Changeset
 
   schema "admin" do
     field(:room, :string)

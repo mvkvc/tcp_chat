@@ -124,14 +124,15 @@ defmodule FakeSlack.Server.Commands do
   end
 
   defp handle_command(state, socket, "/delay " <> rest, user, _room) do
-    [delay, message] = String.split(rest, " ", parts: 2)
+    [delay_string | message_parts] = String.split(rest, " ", parts: 2)
+    message = Enum.join(message_parts, " ")
 
-    case String.to_integer(delay) do
-      delay when delay > 0 ->
-        send_delayed_message(state, socket, message, user, delay)
+    case Integer.parse(delay_string) do
+      {delay_int, _} when delay_int > 0 and message != "" ->
+        send_delayed_message(state, socket, message, user, delay_int)
 
       _ ->
-        Users.send_message(state.users, user, "Invalid delay #{delay}.\n")
+        handle_invalid_delay(state, user, delay_string, message)
     end
 
     {:ok, :continue}
@@ -150,5 +151,16 @@ defmodule FakeSlack.Server.Commands do
 
       Users.chat(state.users, socket, message, user)
     end)
+  end
+
+  defp handle_invalid_delay(state, user, delay_string, message) do
+    error_message =
+      if message == "" do
+        "Invalid argument #{delay_string}."
+      else
+        "Invalid delay #{delay_string}."
+      end
+
+    Users.send_message(state.users, user, error_message)
   end
 end

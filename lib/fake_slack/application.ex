@@ -8,7 +8,8 @@ defmodule FakeSlack.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      {FakeSlack.Server, []}
+      FakeSlack.Repo,
+      FakeSlack.Server
     ]
 
     opts = [strategy: :one_for_one, name: FakeSlack.Supervisor]

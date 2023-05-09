@@ -1,6 +1,9 @@
 .elixir_ls
 .history
+.vscode
 priv/plts
+.sqlite/**
+!.sqlite/.keep
 
 # The directory Mix will write compiled artifacts to.
 /_build/

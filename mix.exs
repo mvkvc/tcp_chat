@@ -28,6 +28,8 @@ defmodule FakeSlack.MixProject do
 
   defp deps do
     [
+      {:ecto_sql, "~> 3.0"},
+      {:ecto_sqlite3, "~> 0.10.1"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.3", only: [:dev], runtime: false}
     ]

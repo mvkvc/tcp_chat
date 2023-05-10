@@ -1,4 +1,8 @@
 defmodule FakeSlack.Server do
+  @moduledoc """
+  The FakeSlack.Server module contains the main server logic for handling connections and user interactions.
+  """
+
   use GenServer
   require Logger
   alias FakeSlack.Server.Commands
@@ -81,7 +85,7 @@ defmodule FakeSlack.Server do
     case :gen_tcp.recv(socket, 0, state.timeout) do
       {:ok, username} ->
         username = String.trim(username)
-        usernames = Users.get_usernames(state.users)
+        usernames = Users.get_users(state.users)
 
         if Enum.member?(usernames, username) do
           :gen_tcp.send(socket, "Username #{username} already taken.\n")
@@ -112,24 +116,7 @@ defmodule FakeSlack.Server do
     case :gen_tcp.recv(socket, 0, state.timeout) do
       {:ok, message} ->
         message = String.trim(message)
-
-        if Commands.is_command?(message) do
-          room = Rooms.get_room(state.users, user)
-
-          case Commands.run_command(state.users, state.admins, message, user, room) do
-            {:ok, :continue} ->
-              handle_chat(state, socket, user)
-
-            {:ok, :exit} ->
-              Users.exit_server(state.users, socket, user)
-
-            _ ->
-              nil
-          end
-        else
-          Users.chat(state.users, socket, message, user)
-          handle_chat(state, socket, user)
-        end
+        process_message(state, socket, message, user)
 
       {:error, :timeout} ->
         Logger.info("User #{user} timed out.")
@@ -141,6 +128,27 @@ defmodule FakeSlack.Server do
 
       {:error, reason} ->
         Logger.info("Error in handle_chat: #{inspect(reason)}")
+    end
+  end
+
+  defp process_message(state, socket, message, user) do
+    if Commands.is_command?(message) do
+      handle_command(state, socket, message, user)
+    else
+      Users.chat(state.users, socket, message, user)
+      handle_chat(state, socket, user)
+    end
+  end
+
+  defp handle_command(state, socket, message, user) do
+    room = Rooms.get_room(state.users, user)
+
+    case Commands.run_command(state, socket, message, user, room) do
+      {:ok, :continue} ->
+        handle_chat(state, socket, user)
+
+      {:ok, :exit} ->
+        Users.exit_server(state.users, socket, user)
     end
   end
 end

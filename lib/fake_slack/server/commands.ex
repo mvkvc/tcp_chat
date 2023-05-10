@@ -1,83 +1,166 @@
 defmodule FakeSlack.Server.Commands do
+  @moduledoc """
+  The FakeSlack.Server.Users module contains the logic for interpreting and executing user commands.
+  """
+
   alias FakeSlack.Server.Rooms
   alias FakeSlack.Server.Users
 
   def is_command?(message) do
-    message = String.trim(message)
-    String.starts_with?(message, "/") or message == "q"
+    message
+    |> String.trim()
+    |> String.starts_with?("/")
   end
 
-  def run_command(users, admins, message, user, room) do
-    case String.trim(message) do
-      "q" ->
-        {:ok, :exit}
+  def run_command(state, socket, message, user, room) do
+    message = String.trim(message)
+    handle_command(state, socket, message, user, room)
+  end
 
-      "/kick " <> kicked_user ->
-        if Rooms.is_admin?(admins, room, user) do
-          Rooms.kick_user(users, user, kicked_user, room)
-        else
-          Users.send_message(users, user, "You are not an admin in `#{room}`.\n")
-        end
+  defp handle_command(_state, _socket, "/q", _user, _room), do: {:ok, :exit}
 
-        {:ok, :continue}
+  defp handle_command(state, _socket, "/time", user, _room) do
+    {{year, month, day}, {hour, minute, second}} = :calendar.local_time()
 
-      "/exit" ->
-        Rooms.change_room(users, user, "lobby")
-        {:ok, :continue}
+    time_message =
+      "The local server time is #{hour}:#{minute}:#{second} on #{day}/#{month}/#{year}.\n"
 
-      "/here" ->
-        user_list =
-          Rooms.list_users(users, room)
-          |> Enum.filter(fn room_user -> room_user != user end)
+    Users.send_message(state.users, user, time_message)
+
+    {:ok, :continue}
+  end
+
+  defp handle_command(state, _socket, "/kick " <> kicked_user, user, room) do
+    if Rooms.is_admin?(state.admins, room, user) do
+      Rooms.kick_user(state.users, user, kicked_user, room)
+    else
+      Users.send_message(state.users, user, "You are not an admin in `#{room}`.\n")
+    end
+
+    {:ok, :continue}
+  end
+
+  defp handle_command(state, _socket, "/exit", user, _room) do
+    Rooms.change_room(state.users, user, "lobby")
+
+    {:ok, :continue}
+  end
+
+  defp handle_command(state, _socket, "/here", user, room) do
+    user_list =
+      Rooms.list_users(state.users, room)
+      |> Enum.filter(fn room_user -> room_user != user end)
+      |> Enum.sort()
+
+    if user_list == [] do
+      message = "No other users in `#{room}`.\n"
+      Users.send_message(state.users, user, message)
+    else
+      user_list_string = Enum.join(user_list, "\n")
+      message = "Users in `#{room}`:\n#{user_list_string}\n"
+      Users.send_message(state.users, user, message)
+    end
+
+    {:ok, :continue}
+  end
+
+  defp handle_command(state, _socket, "/peek " <> peeked_room, user, _room) do
+    user_list = Rooms.list_users(state.users, peeked_room)
+
+    message =
+      if user_list == [] do
+        "No users in `#{peeked_room}`.\n"
+      else
+        user_list_string =
+          user_list
           |> Enum.sort()
+          |> Enum.join("\n")
 
-        if user_list == [] do
-          message = "No other users in `#{room}`.\n"
-          Users.send_message(users, user, message)
-        else
-          user_list_string = Enum.join(user_list, "\n")
-          message = "Users in `#{room}`:\n#{user_list_string}\n"
-          Users.send_message(users, user, message)
-        end
+        "Users in `#{peeked_room}`:\n#{user_list_string}\n"
+      end
 
-        {:ok, :continue}
+    Users.send_message(state.users, user, message)
 
-      "/peek " <> room ->
-        user_list = Rooms.list_users(users, room)
+    {:ok, :continue}
+  end
 
-        message =
-          if user_list == [] do
-            "No users in `#{room}`.\n"
-          else
-            user_list_string =
-              user_list
-              |> Enum.sort()
-              |> Enum.join("\n")
+  defp handle_command(state, _socket, "/room", user, room) do
+    Users.send_message(state.users, user, "You are in `#{room}`.\n")
 
-            "Users in `#{room}`:\n#{user_list_string}\n"
-          end
+    {:ok, :continue}
+  end
 
-        Users.send_message(users, user, message)
-        {:ok, :continue}
+  defp handle_command(state, _socket, "/rooms", user, _room) do
+    rooms = Rooms.list_rooms(state.users) |> Enum.sort()
+    rooms_string = Enum.join(rooms, "\n")
+    message = "Rooms:\n#{rooms_string}\n"
+    Users.send_message(state.users, user, message)
 
-      "/room" ->
-        Users.send_message(users, user, "You are in `#{room}`.\n")
-        {:ok, :continue}
+    {:ok, :continue}
+  end
 
-      "/rooms" ->
-        rooms = Rooms.list_rooms(users) |> Enum.sort()
-        rooms_string = Enum.join(rooms, "\n")
-        message = "Rooms:\n#{rooms_string}\n"
-        Users.send_message(users, user, message)
-        {:ok, :continue}
+  defp handle_command(state, _socket, "/switch " <> new_room, user, _room) do
+    Rooms.change_room(state.users, user, new_room)
+    {:ok, :continue}
+  end
 
-      "/switch " <> room ->
-        Rooms.change_room(users, user, room)
-        {:ok, :continue}
+  defp handle_command(state, _socket, "/users", user, _room) do
+    users_list =
+      Users.get_users(state.users)
+      |> Enum.filter(fn username -> username != user end)
+      |> Enum.sort()
+
+    message =
+      if users_list == [] do
+        "No other users online.\n"
+      else
+        users_list_string = Enum.join(users_list, "\n")
+        "Users online:\n#{users_list_string}\n"
+      end
+
+    Users.send_message(state.users, user, message)
+
+    {:ok, :continue}
+  end
+
+  defp handle_command(state, socket, "/delay " <> rest, user, _room) do
+    [delay_string | message_parts] = String.split(rest, " ", parts: 2)
+    message = Enum.join(message_parts, " ")
+
+    case Integer.parse(delay_string) do
+      {delay_int, _} when delay_int > 0 and message != "" ->
+        send_delayed_message(state, socket, message, user, delay_int)
 
       _ ->
-        Users.send_message(users, user, "Invalid command #{message}.\n")
-        {:ok, :continue}
+        handle_invalid_delay(state, user, delay_string, message)
     end
+
+    {:ok, :continue}
+  end
+
+  defp handle_command(state, _socket, message, user, _room) do
+    Users.send_message(state.users, user, "Invalid command #{message}.\n")
+    {:ok, :continue}
+  end
+
+  defp send_delayed_message(state, socket, message, user, delay) do
+    message = String.trim(message)
+
+    Task.Supervisor.start_child(state.supervisor, fn ->
+      :timer.sleep(delay * 1000)
+
+      Users.chat(state.users, socket, message, user)
+    end)
+  end
+
+  defp handle_invalid_delay(state, user, delay_string, message) do
+    error_message =
+      if message == "" do
+        "Invalid argument #{delay_string}."
+      else
+        "Invalid delay #{delay_string}."
+      end
+
+    Users.send_message(state.users, user, error_message)
   end
 end

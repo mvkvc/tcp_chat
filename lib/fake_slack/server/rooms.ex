@@ -1,4 +1,8 @@
 defmodule FakeSlack.Server.Rooms do
+  @moduledoc """
+  The FakeSlack.Server.Users module contains the logic for operations including rooms on the server.
+  """
+
   require Logger
   alias FakeSlack.Server.Users
 

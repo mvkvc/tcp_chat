@@ -1,12 +1,16 @@
 defmodule FakeSlack.Server.Users do
+  @moduledoc """
+  The FakeSlack.Server.Users module contains the logic for operations including users on the server.
+  """
+
   require Logger
   alias FakeSlack.Server.Rooms
 
-  def create_users() do
+  def create_users do
     :ets.new(:users, [:public])
   end
 
-  def get_usernames(users) do
+  def get_users(users) do
     users
     |> :ets.match({:_, :"$1", :_})
     |> Enum.map(fn [user] -> user end)

@@ -1,0 +1,25 @@
+{
+  "sqltools.connections": [
+    {
+      "mssqlOptions": {
+        "appName": "SQLTools",
+        "useUTC": true,
+        "encrypt": true
+      },
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 1433,
+      "driver": "MSSQL",
+      "name": "ms_sql_1",
+      "database": "master",
+      "username": "sa",
+      "password": "password123!"
+    },
+    {
+      "previewLimit": 50,
+      "driver": "SQLite",
+      "name": "repo",
+      "database": "${workspaceFolder:fake_slack}/.sqlite/repo.db"
+    }
+  ]
+}

@@ -4,6 +4,8 @@
 
 TCP chat server with rooms and server commands.
 
+(To see the initial version of the server, check out the "Upload" commit on the `main` branch.)
+
 ## Usage
 
 To connect to the server with telnet run:

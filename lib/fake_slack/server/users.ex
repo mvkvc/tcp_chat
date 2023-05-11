@@ -4,52 +4,42 @@ defmodule FakeSlack.Server.Users do
   """
 
   require Logger
+  alias FakeSlack.Server.Access
   alias FakeSlack.Server.Rooms
 
-  def create_users do
-    :ets.new(:users, [:public])
+  def get_users do
+    Access.get_users()
   end
 
-  def get_users(users) do
-    users
-    |> :ets.match({:_, :"$1", :_})
-    |> Enum.map(fn [user] -> user end)
+  def send_message(user, message, sender \\ nil) do
+    message = format_message(message, sender)
+    socket = Access.get_socket(user)
+    :gen_tcp.send(socket, message)
   end
 
-  def send_message(users, user, message) do
-    case :ets.match(users, {:"$1", user, :_}) do
-      [[socket]] ->
-        message = String.trim(message) <> "\n"
-        :gen_tcp.send(socket, message)
+  def enter_server(user, socket, room \\ "lobby") do
+    Access.enter_server(user, socket, room)
+    message = "#{user} has joined the server."
+    Rooms.send_message(room, message, user)
+  end
 
-      _ ->
-        Logger.error("No match for #{user}.")
+  def exit_server(user) do
+    message = "#{user} has left the server."
+    room = Access.get_room(user)
+    Rooms.send_message(room, message, user)
+    Access.exit_server(user)
+  end
+
+  def chat(user, message) do
+    {user, message}
+    room = Access.get_room(user)
+    Rooms.send_message(room, message, user)
+  end
+
+  defp format_message(message, sender) do
+    case sender do
+      nil -> "MESSAGE: #{message}\n"
+      _ -> "MESSAGE #{sender}: #{message}\n"
     end
-  end
-
-  def enter_server(users, socket, user, room \\ "lobby") do
-    message = "Welcome to FakeSlack, #{user}!"
-    connect_user(users, socket, user, room)
-    send_message(users, user, message)
-  end
-
-  def exit_server(users, socket, user) do
-    message = "Disconnecting from the server.\n"
-    send_message(users, user, message)
-    disconnect_user(users, socket, user)
-  end
-
-  def chat(users, socket, message, user) do
-    [[room]] = :ets.match(users, {:_, user, :"$1"})
-    Rooms.send_message(users, socket, message, room, user)
-  end
-
-  def connect_user(users, socket, user, room) do
-    :ets.insert(users, {socket, user, room})
-  end
-
-  def disconnect_user(users, socket, user) do
-    :ok = :gen_tcp.close(socket)
-    :ets.match_delete(users, {:_, user, :_})
   end
 end

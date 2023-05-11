@@ -1,5 +1,7 @@
 .elixir_ls
 .history
+.vscode
+*.code-workspace
 priv/plts
 
 # The directory Mix will write compiled artifacts to.

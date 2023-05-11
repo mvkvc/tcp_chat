@@ -4,8 +4,6 @@
 
 TCP chat server with rooms and server commands.
 
-(To view the initial version of the server, see the "Upload" commit on the `main` branch.)
-
 ## Usage
 
 To connect to the server with telnet run:
@@ -18,7 +16,7 @@ To connect to the server with telnet run:
 - `/time` shows the current server time
 - `/here` shows who is in the current room
 - `/peek ROOM` shows who is in another room
-- `/switch ROOM` moves user to another room
+- `/switch ROOM` moves the user to another room
 - `/room` shows the current room
 - `/rooms` shows all rooms
 - `/kick USER` kicks a user from the room if you are an admin

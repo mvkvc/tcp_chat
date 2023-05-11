@@ -4,93 +4,82 @@ defmodule FakeSlack.Server.Rooms do
   """
 
   require Logger
+  alias FakeSlack.Server.Access
   alias FakeSlack.Server.Users
 
-  def create_admins(admin_list \\ []) do
-    ets = :ets.new(:admins, [:public])
-
-    Enum.each(admin_list, fn {room, admins} ->
-      :ets.insert(ets, {to_string(room), admins})
-    end)
-
-    ets
+  def is_admin?(room, user) do
+    admins = Access.get_admins(room)
+    Enum.member?(admins, user)
   end
 
-  def is_admin?(admins, room, user) do
-    match_result = :ets.match(admins, {room, :"$1"})
-
-    case match_result do
-      [] ->
-        false
-
-      [[admins]] ->
-        Enum.member?(admins, user)
-    end
+  def get_room(user) do
+    Access.get_room(user)
   end
 
-  def send_message(users, socket, message, room, user \\ nil) do
-    {sockets, message} =
-      if user do
-        [[user]] = :ets.match(users, {socket, :"$1", :_})
-        sockets = :ets.match(users, {:"$1", :_, room})
-        {sockets, format_message(message, user)}
-      else
-        {[], format_message(message)}
-      end
-
-    Enum.each(sockets, fn [other_socket] ->
-      if other_socket != socket do
-        :gen_tcp.send(other_socket, message)
-      end
-    end)
+  def get_rooms do
+    Access.get_rooms()
   end
 
-  def change_room(users, user, room) do
-    case :ets.match(users, {:"$1", user, :"$2"}) do
-      [[socket, current_room]] ->
-        :ets.match_delete(users, {socket, user, current_room})
-        :ets.insert(users, {socket, user, room})
-
-      _ ->
-        Logger.error("No match for #{user}.")
-    end
+  def send_message(room, message) do
+    message
+    |> format_message()
+    |> send_to_all(room)
   end
 
-  def kick_user(users, user, kicked, room \\ "lobby") do
-    message = "#{user} has kicked you from the room.\n"
-    Users.send_message(users, kicked, message)
-    message = "#{kicked} was kicked from the room.\n"
-    Users.send_message(users, user, message)
-    change_room(users, kicked, room)
+  def send_message(room, message, user) do
+    message
+    |> format_message(user)
+    |> send_to_except_user(room, user)
   end
 
-  def list_users(users, room) do
-    users = :ets.match(users, {:_, :"$1", room})
-
-    if Enum.empty?(users) do
-      users
-    else
-      Enum.map(users, fn [user] -> user end)
-    end
-  end
-
-  def list_rooms(users) do
-    users
-    |> :ets.match({:_, :_, :"$1"})
-    |> Enum.uniq()
-    |> Enum.map(fn [room] -> room end)
-  end
-
-  def get_room(users, user) do
-    [[room]] = :ets.match(users, {:_, user, :"$1"})
+  defp send_to_all(message, room) do
     room
+    |> Access.get_sockets()
+    |> Enum.each(fn socket -> :gen_tcp.send(socket, message) end)
   end
 
-  defp format_message(message, user \\ nil) do
-    if user do
-      "MESSAGE #{user}: " <> message <> "\n"
+  defp send_to_except_user(message, room, user) do
+    user_socket = Access.get_socket(user)
+
+    room
+    |> Access.get_sockets()
+    |> Enum.reject(&(&1 == user_socket))
+    |> Enum.each(fn socket -> :gen_tcp.send(socket, message) end)
+  end
+
+  def change_room(user, room) do
+    current_room = Access.get_room(user)
+    message = "#{user} has left the room."
+    send_message(current_room, message, user)
+    Access.change_room(user, room)
+    message = "#{user} has entered the room."
+    send_message(room, message, user)
+  end
+
+  def kick_user(user, kicked_user, room \\ "lobby") do
+    current_room = Access.get_room(user)
+
+    if is_admin?(current_room, user) do
+      Access.change_room(kicked_user, room)
+      message = "You have been kicked from `#{current_room}`."
+      Users.send_message(kicked_user, message)
+
+      message = "#{kicked_user} was kicked from `#{current_room}`."
+      send_message(current_room, message)
     else
-      "MESSAGE: " <> message <> "\n"
+      message = "You are not an admin in `#{current_room}`."
+      Users.send_message(user, message)
+    end
+  end
+
+  def get_users(room) do
+    Access.get_users(room)
+  end
+
+  defp format_message(message, sender \\ nil) do
+    case sender do
+      nil -> "ROOM: #{message}\n"
+      _ -> "ROOM #{sender}: #{message}\n"
     end
   end
 end

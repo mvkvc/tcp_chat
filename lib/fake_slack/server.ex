@@ -5,15 +5,13 @@ defmodule FakeSlack.Server do
 
   use GenServer
   require Logger
+  alias FakeSlack.Server.Access
   alias FakeSlack.Server.Commands
-  alias FakeSlack.Server.Rooms
   alias FakeSlack.Server.Users
 
   defstruct listen_socket: nil,
-            timeout: nil,
-            users: nil,
-            admins: nil,
-            supervisor: nil
+            supervisor: nil,
+            timeout: nil
 
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
@@ -31,8 +29,7 @@ defmodule FakeSlack.Server do
 
     {:ok, supervisor} = Task.Supervisor.start_link(max_children: max_users)
 
-    users = Users.create_users()
-    admins = Rooms.create_admins(admin_list)
+    Access.init(admins: admin_list)
 
     listen_opts = [
       ifaddr: {0, 0, 0, 0},
@@ -48,10 +45,8 @@ defmodule FakeSlack.Server do
 
         state = %__MODULE__{
           listen_socket: listen_socket,
-          timeout: timeout,
-          users: users,
-          admins: admins,
-          supervisor: supervisor
+          supervisor: supervisor,
+          timeout: timeout
         }
 
         {:ok, state, {:continue, :accept}}
@@ -79,27 +74,21 @@ defmodule FakeSlack.Server do
     end
   end
 
-  def handle_connection(state, socket) do
+  defp handle_connection(state, socket) do
     :gen_tcp.send(socket, "Please enter a username: \n")
 
     case :gen_tcp.recv(socket, 0, state.timeout) do
       {:ok, username} ->
         username = String.trim(username)
-        usernames = Users.get_users(state.users)
+        usernames = Users.get_users()
 
         if Enum.member?(usernames, username) do
           :gen_tcp.send(socket, "Username #{username} already taken.\n")
           handle_connection(state, socket)
         else
           :gen_tcp.send(socket, "Username set to #{username}.\n")
-          Users.enter_server(state.users, socket, username, "lobby")
-
-          Rooms.send_message(
-            state.users,
-            socket,
-            "#{username} has entered the chat.\n",
-            "lobby"
-          )
+          :gen_tcp.send(socket, "Welcome to the server, #{username}!\n")
+          Users.enter_server(username, socket, "lobby")
 
           handle_chat(state, socket, username)
         end
@@ -112,43 +101,40 @@ defmodule FakeSlack.Server do
     end
   end
 
-  def handle_chat(state, socket, user) do
+  defp handle_chat(state, socket, user) do
     case :gen_tcp.recv(socket, 0, state.timeout) do
       {:ok, message} ->
         message = String.trim(message)
-        process_message(state, socket, message, user)
+        handle_message(state, socket, user, message)
 
-      {:error, :timeout} ->
-        Logger.info("User #{user} timed out.")
-        Users.exit_server(state.users, socket, user)
-
-      {:error, :closed} ->
-        Logger.info("User #{user} closed connection.")
-        Users.exit_server(state.users, socket, user)
+      {:error, reason} when reason in [:timeout, :closed] ->
+        Logger.info("User #{user} disconnected.")
+        Users.exit_server(user)
 
       {:error, reason} ->
         Logger.info("Error in handle_chat: #{inspect(reason)}")
     end
   end
 
-  defp process_message(state, socket, message, user) do
+  defp handle_message(state, socket, user, message) do
     if Commands.is_command?(message) do
-      handle_command(state, socket, message, user)
+      handle_command(state, socket, user, message)
     else
-      Users.chat(state.users, socket, message, user)
+      Users.chat(user, message)
       handle_chat(state, socket, user)
     end
   end
 
-  defp handle_command(state, socket, message, user) do
-    room = Rooms.get_room(state.users, user)
-
-    case Commands.run_command(state, socket, message, user, room) do
+  defp handle_command(state, socket, user, command) do
+    case Commands.handle_command(user, command) do
       {:ok, :continue} ->
         handle_chat(state, socket, user)
 
       {:ok, :exit} ->
-        Users.exit_server(state.users, socket, user)
+        message = "Goodbye, #{user}!"
+        Users.send_message(user, message)
+        Users.exit_server(user)
+        :gen_tcp.close(socket)
     end
   end
 end

@@ -1,6 +1,6 @@
-# fake_slack
+# tcp_chat
 
-[![ci](https://github.com/mvkvc/fake_slack/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/mvkvc/fake_slack/actions/workflows/ci.yaml)
+[![ci](https://github.com/mvkvc/tcp_chat/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/mvkvc/tcp_chat/actions/workflows/ci.yaml)
 
 TCP chat server with rooms and server commands.
 
@@ -8,7 +8,7 @@ TCP chat server with rooms and server commands.
 
 To connect to the server with telnet run:
 
-`telnet fake-slack.fly.dev 5000`
+`telnet tcp-chat.fly.dev 5000`
 
 ## Commands
 

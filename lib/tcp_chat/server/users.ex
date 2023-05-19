@@ -1,11 +1,11 @@
-defmodule FakeSlack.Server.Users do
+defmodule TcpChat.Server.Users do
   @moduledoc """
-  The FakeSlack.Server.Users module contains the logic for operations including users on the server.
+  The TcpChat.Server.Users module contains the logic for operations including users on the server.
   """
 
   require Logger
-  alias FakeSlack.Server.Access
-  alias FakeSlack.Server.Rooms
+  alias TcpChat.Server.Access
+  alias TcpChat.Server.Rooms
 
   def get_users do
     Access.get_users()

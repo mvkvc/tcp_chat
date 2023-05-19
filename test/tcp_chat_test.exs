@@ -1,7 +1,7 @@
-defmodule FakeSlack.ServerTest do
+defmodule TcpChat.ServerTest do
   use ExUnit.Case
 
-  @port Application.compile_env(:fake_slack, :port, 5000)
+  @port Application.compile_env(:tcp_chat, :port, 5000)
   @timeout_client 1000
   @timeout_flush 10
   @sleep 100

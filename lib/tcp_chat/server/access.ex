@@ -1,4 +1,4 @@
-defmodule FakeSlack.Server.Access do
+defmodule TcpChat.Server.Access do
   @moduledoc """
   This module is responsible for implementing data access functions.
   """

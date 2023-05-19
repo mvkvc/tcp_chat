@@ -1,9 +1,9 @@
-defmodule FakeSlack.MixProject do
+defmodule TcpChat.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :fake_slack,
+      app: :tcp_chat,
       version: "0.1.0",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
@@ -14,7 +14,7 @@ defmodule FakeSlack.MixProject do
 
   def application do
     [
-      mod: {FakeSlack.Application, []},
+      mod: {TcpChat.Application, []},
       extra_applications: [:logger]
     ]
   end

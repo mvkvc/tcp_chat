@@ -1,13 +1,13 @@
-defmodule FakeSlack.Server do
+defmodule TcpChat.Server do
   @moduledoc """
-  The FakeSlack.Server module contains the main server logic for handling connections and user interactions.
+  The TcpChat.Server module contains the main server logic for handling connections and user interactions.
   """
 
   use GenServer
   require Logger
-  alias FakeSlack.Server.Access
-  alias FakeSlack.Server.Commands
-  alias FakeSlack.Server.Users
+  alias TcpChat.Server.Access
+  alias TcpChat.Server.Commands
+  alias TcpChat.Server.Users
 
   defstruct listen_socket: nil,
             supervisor: nil,
@@ -19,10 +19,10 @@ defmodule FakeSlack.Server do
 
   @impl true
   def init([] = _opts) do
-    port = Application.get_env(:fake_slack, :port, 5000)
-    timeout = Application.get_env(:fake_slack, :timeout, 300_000)
-    max_users = Application.get_env(:fake_slack, :max_users, 10)
-    admin_list = Application.get_env(:fake_slack, :admin_list, [])
+    port = Application.get_env(:tcp_chat, :port, 5000)
+    timeout = Application.get_env(:tcp_chat, :timeout, 300_000)
+    max_users = Application.get_env(:tcp_chat, :max_users, 10)
+    admin_list = Application.get_env(:tcp_chat, :admin_list, [])
 
     args = [port: port, timeout: timeout, max_users: max_users, admin_list: admin_list]
     Logger.info("Starting server with arguments: #{inspect(args)}")

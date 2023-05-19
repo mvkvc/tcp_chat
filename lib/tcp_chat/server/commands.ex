@@ -1,11 +1,11 @@
-defmodule FakeSlack.Server.Commands do
+defmodule TcpChat.Server.Commands do
   @moduledoc """
-  The FakeSlack.Server.Users module contains the logic for interpreting and executing user commands.
+  The TcpChat.Server.Users module contains the logic for interpreting and executing user commands.
   """
 
   require Logger
-  alias FakeSlack.Server.Rooms
-  alias FakeSlack.Server.Users
+  alias TcpChat.Server.Rooms
+  alias TcpChat.Server.Users
 
   def is_command?(message) do
     message

@@ -1,5 +1,5 @@
 import Config
 
-config :fake_slack,
+config :tcp_chat,
   timeout: 5_000,
   admin_list: [elixir: ["sasa", "jose"]]

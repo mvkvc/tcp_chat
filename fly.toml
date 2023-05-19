@@ -1,6 +1,6 @@
-# fly.toml file generated for fake-slack on 2023-05-06T08:51:41-04:00
+# fly.toml file generated for tcp-chat on 2023-05-19T17:45:24-04:00
 
-app = "fake-slack"
+app = "tcp-chat"
 kill_signal = "SIGTERM"
 kill_timeout = 5
 primary_region = "yyz"
@@ -25,8 +25,8 @@ processes = []
     type = "connections"
 
   [[services.ports]]
-  handlers = []
-  port = "5000"
+    handlers = []
+    port = "5000"
 
   [[services.tcp_checks]]
     grace_period = "1s"

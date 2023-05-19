@@ -1,6 +1,6 @@
 import Config
 
-config :fake_slack,
+config :tcp_chat,
   port: 5000,
   timeout: 300_000,
   max_users: 100,

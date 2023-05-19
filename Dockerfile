@@ -45,6 +45,6 @@ ENV LC_ALL en_US.UTF-8
 
 WORKDIR /app
 
-COPY --from=builder /app/_build/prod/rel/fake_slack ./
+COPY --from=builder /app/_build/prod/rel/tcp_chat ./
 
-CMD bin/fake_slack start
+CMD bin/tcp_chat start
